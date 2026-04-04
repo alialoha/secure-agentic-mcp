@@ -2,7 +2,7 @@ services:
   mcp:
     build:
       context: .
-      dockerfile: Dockerfile.mcp
+      dockerfile: Dockerfile.server
     ports:
       - "8000:8000"
     volumes:

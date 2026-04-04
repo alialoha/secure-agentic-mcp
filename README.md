@@ -52,7 +52,7 @@ secure-agentic-mcp/
 │   └── flask.png
 ├── requirements.txt
 ├── docker-compose.yml
-├── Dockerfile.mcp
+├── Dockerfile.server
 ├── Dockerfile.operator
 ├── Dockerfile.web
 ├── .env.example
