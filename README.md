@@ -151,7 +151,7 @@ docker compose up --build
 
 Maps: MCP `8000`, Operator `7860`, Web `5000`. Set `OPENAI_API_KEY` in `.env`.
 
-**Deployment planning** (cloud options, checklists, CI ideas): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+**Deployment planning** (includes **GCP**: Compute Engine + Compose, Cloud Run, GKE): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Environment
 
