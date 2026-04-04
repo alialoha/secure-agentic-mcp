@@ -187,6 +187,11 @@ class OperatorApp(MCPLLMHost):
             return "Policy must be allow, deny, or ask"
         self.permissions[tool_name] = policy
         self.save_permissions()
+        self.log_audit(
+            f"POLICY: {tool_name}",
+            policy.upper(),
+            "Operator saved permissions.json",
+        )
         return f"Saved: {tool_name} = {policy}\n→ {self.permissions_file}"
 
     async def gui_view_audit_log(self):
