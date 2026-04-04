@@ -13,7 +13,11 @@ def client():
 def test_index_ok(client):
     rv = client.get("/")
     assert rv.status_code == 200
-    assert b"Secure MCP" in rv.data or b"governed" in rv.data
+    body = rv.data
+    assert b"Secure MCP" in body
+    assert b"architecture.svg" in body or b"MCP server" in body
+    assert b"Ali Mousavi" in body
+    assert b"github.com/alialoha" in body
 
 
 def test_generate_demo(client):

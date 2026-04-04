@@ -9,7 +9,7 @@ body {
     font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     background: #ffffff;
     color: #111827;
-    height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
 }
 
@@ -44,11 +44,26 @@ body {
     justify-content: space-between;
 }
 
+.header-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .header-title {
     color: #111827;
     font-size: 18px;
-    font-weight: 500;
-    line-height: 1.5;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+}
+
+.header-tagline {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    max-width: 28rem;
 }
 
 .clear-btn {
@@ -76,7 +91,8 @@ body {
 .chat-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 80px);
+    flex: 1;
+    min-height: 0;
 }
 
 .messages-area {
@@ -98,39 +114,117 @@ body {
 .welcome-screen {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    height: 100%;
-    min-height: 400px;
+    align-items: stretch;
+    text-align: left;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 8px 0 24px;
+    gap: 20px;
 }
 
-.welcome-icon {
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 32px;
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 24px;
-    color: #6b7280;
+.welcome-intro {
+    text-align: center;
+}
+
+.welcome-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2563eb;
+    margin-bottom: 8px;
 }
 
 .welcome-title {
     color: #111827;
-    font-size: 20px;
-    font-weight: 500;
-    margin-bottom: 16px;
-    line-height: 1.5;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+}
+
+.welcome-lead {
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 52rem;
+    margin: 0 auto;
+}
+
+.welcome-lead code {
+    font-size: 13px;
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.welcome-diagram {
+    margin: 0;
+    padding: 12px 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+}
+
+.welcome-diagram img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: min(360px, 42vh);
+    object-fit: contain;
+}
+
+.welcome-modes {
+    text-align: center;
+}
+
+.welcome-subtitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
 }
 
 .welcome-text {
     color: #6b7280;
-    max-width: 448px;
+    max-width: 40rem;
+    margin: 0 auto;
     font-size: 14px;
+    line-height: 1.6;
+}
+
+.welcome-text code {
+    font-size: 13px;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* Footer */
+.site-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+    background: #fafafa;
+    padding: 12px 24px;
+    text-align: center;
+}
+
+.footer-line {
+    font-size: 12px;
+    color: #6b7280;
     line-height: 1.5;
+}
+
+.site-footer a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.site-footer a:hover {
+    text-decoration: underline;
 }
 
 /* Messages Container */

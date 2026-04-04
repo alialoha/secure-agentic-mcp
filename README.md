@@ -1,6 +1,35 @@
 # Secure agentic tools (MCP, HTTP)
 
-Single demo repo merging a **FastMCP HTTP server**, an **Operator console (Gradio)** with permission-aware OpenAI tool use, and a **Flask user UI** with **Demo** vs **Live** modes.
+**Governed MCP over streamable HTTP** — not a thin chatbot wrapper. This project wires a **FastMCP** server, a **permission-aware client** (`allow` / `ask` / `deny` + audit), and a **tool-calling LLM host** (Operator **Gradio** + Flask **Demo / Live**; model is pluggable).
+
+**Author:** [Ali Mousavi](https://github.com/alialoha) · **Repository:** [github.com/alialoha/secure-agentic-mcp](https://github.com/alialoha/secure-agentic-mcp)
+
+## Architecture (at a glance)
+
+```mermaid
+flowchart LR
+  subgraph srv["MCP server"]
+    T["Tools"]
+    R["Resources"]
+    P["Prompts"]
+  end
+  C["Permission client (Operator / Flask Live)"]
+  L["LLM host\n(tool-calling)"]
+  srv <-->|"Streamable HTTP (MCP)"| C
+  C <-->|"LLM API (tools)"| L
+```
+
+- **Server** — MCP **server** role: tools, resources, prompts; workspace + server-side audit.
+- **Middle** — MCP **client** (streamable HTTP to the server) plus **app policy**: `permissions.json` and `audit.log` live on the client; Operator / Flask are the UIs that embed this stack.
+- **LLM** — **Tool-calling** over an **LLM API** (not MCP transport); the concrete model is a deployment choice. The model proposes tools; **policy runs in the client** before calls reach the MCP server.
+
+## Screenshots
+
+Representative UI captures for reviewers (replace with your own if you prefer pixel-perfect fidelity to a local run).
+
+| Operator (Gradio) — `python -m mcp_operator.gradio_app` | User UI (Flask) — `python -m web.app` |
+| --- | --- |
+| ![Operator console](docs/operator.png) | ![Flask user UI](docs/flask.png) |
 
 ## Layout
 
@@ -18,6 +47,10 @@ All Python packages live under **`src/`** only. (Do not add `mcp_client`, `mcp_s
 ```
 secure-agentic-mcp/
 ├── README.md
+├── docs/
+│   ├── DEPLOYMENT.md
+│   ├── operator.png
+│   └── flask.png
 ├── requirements.txt
 ├── docker-compose.yml
 ├── Dockerfile.mcp
@@ -48,7 +81,9 @@ secure-agentic-mcp/
         ├── __init__.py
         ├── app.py
         ├── demo.py
+        ├── branding.py
         ├── static/
+        │   ├── architecture.svg
         │   ├── script.js
         │   └── styles.css
         └── templates/
@@ -115,6 +150,8 @@ docker compose up --build
 ```
 
 Maps: MCP `8000`, Operator `7860`, Web `5000`. Set `OPENAI_API_KEY` in `.env`.
+
+**Deployment planning** (cloud options, checklists, CI ideas): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Environment
 

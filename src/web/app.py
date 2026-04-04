@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
 from agent.mcp_llm_host import MCPLLMHost
+from web.branding import get_branding
 from web.demo import demo_reply
 
 _ROOT = Path(__file__).resolve().parent
@@ -35,9 +36,12 @@ def _run_chat(message: str) -> str:
 
 @app.route("/")
 def index():
+    b = get_branding()
     return render_template(
         "index.html",
         live_available=_live_allowed(),
+        author_name=b["author_name"],
+        repo_url=b["repo_url"],
     )
 
 

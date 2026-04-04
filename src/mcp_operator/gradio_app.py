@@ -19,6 +19,7 @@ import gradio as gr
 from dotenv import load_dotenv
 
 from agent.mcp_llm_host import MCPLLMHost
+from web.branding import get_branding, read_architecture_svg
 from mcp_operator.suggested_args import (
     REQUIRED_PROMPT_ARG_KEYS,
     format_prompt_list_line,
@@ -217,16 +218,28 @@ class OperatorApp(MCPLLMHost):
             self.reset_conversation()
             return []
 
-        with gr.Blocks(title="Secure MCP — Operator") as demo:
+        b = get_branding()
+        _arch_block = (
+            '<div style="max-width:1100px;margin:0 auto 12px">'
+            + read_architecture_svg()
+            + "</div>"
+        )
+        with gr.Blocks(
+            title="Secure MCP — Admin operator",
+            theme=gr.themes.Default(),
+        ) as demo:
             gr.Markdown(
                 f"""
-# Operator console
-**MCP:** `{self.server_url}` · **HTTP transport** (streamable) · **Model:** {self.model}
+# Admin operator
+**MCP:** `{self.server_url}` · **HTTP** (streamable)
 
-Use **AI chat** for governed tool use, **Tools / Resources / Prompts** to inspect the server,
-and **Permissions** to edit `data/permissions.json` (allow / ask / deny per tool).
+This console is for **operators and admins**: not just chatting with the model, but **governing** how tools are used.
+Use **Permissions** to set each tool to **allow**, **ask**, or **deny** (your security posture per tool), and **Refresh audit log**
+to review what was allowed, blocked, or sent for approval. **Tools / Resources / Prompts** are for **inspection** (what the server exposes).
+**AI chat** exercises the same client-side policy and approval flow your users get in production—use it to validate behavior end-to-end.
 """
             )
+            gr.HTML(_arch_block)
             with gr.Tabs():
                 with gr.Tab("AI chat"):
                     chatbot = gr.Chatbot(label="Conversation", height=420)
@@ -347,6 +360,11 @@ and **Permissions** to edit `data/permissions.json` (allow / ask / deny per tool
                     lt.click(self.load_perm_tool_choices, outputs=[pdd, pres])
                     sv.click(self.gui_configure_permission, [pdd, pol], pres)
                     va.click(self.gui_view_audit_log, outputs=aud)
+
+            gr.Markdown(
+                f"---\n\nDesigned & built by **{b['author_name']}** · "
+                f"[Source on GitHub]({b['repo_url']})"
+            )
 
         return demo
 
