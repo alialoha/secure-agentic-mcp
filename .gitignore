@@ -1,4 +1,5 @@
 .env
+.deployment.md
 .venv/
 venv/
 __pycache__/

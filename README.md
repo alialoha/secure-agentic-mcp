@@ -48,7 +48,6 @@ All Python packages live under **`src/`** only. (Do not add `mcp_client`, `mcp_s
 secure-agentic-mcp/
 ├── README.md
 ├── docs/
-│   ├── DEPLOYMENT.md
 │   ├── operator.png
 │   └── flask.png
 ├── requirements.txt
@@ -150,8 +149,6 @@ docker compose up --build
 ```
 
 Maps: MCP `8000`, Operator `7860`, Web `5000`. Set `OPENAI_API_KEY` in `.env`.
-
-**Deployment planning** (includes **GCP**: Compute Engine + Compose, Cloud Run, GKE): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Environment
 
