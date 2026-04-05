@@ -55,7 +55,7 @@
                             <h3 class="welcome-subtitle">Try it</h3>
                             <p class="welcome-text">
                                 <strong>Demo</strong> — offline canned replies (always works).
-                                <strong>Live</strong> — OpenAI + MCP tools (needs <code>OPENAI_API_KEY</code> and the MCP server running).
+                                <strong>Live</strong> — LLM + MCP tools: set credentials for your <code>LLM_PROVIDER</code> (e.g. <code>OPENAI_API_KEY</code>, or <code>groq</code>/<code>cerebras</code> keys — see <code>.env.example</code>); MCP server must be reachable.
                                 Use the <em>Operator</em> (Gradio) to list tools and edit policies.
                             </p>
                         </div>
@@ -85,13 +85,13 @@
                             <div class="select-wrapper">
                                 <select id="modelSelect" class="model-select">
                                     <option value="demo">Demo (always works)</option>
-                                    <option value="live" {% if not live_available %}disabled{% endif %}>Live (OpenAI + MCP)</option>
+                                    <option value="live" {% if not live_available %}disabled{% endif %}>Live (LLM + MCP)</option>
                                 </select>
                             </div>
                         </div>
                         {% if not live_available %}
                         <p class="welcome-text" style="padding: 0 24px 8px; font-size: 13px; color: #6b7280;">
-                            Live mode disabled: set <code>OPENAI_API_KEY</code> (and ensure the MCP server is reachable).
+                            Live mode disabled: configure LLM credentials for the selected <code>LLM_PROVIDER</code> in <code>.env</code> (see <code>.env.example</code>).
                         </p>
                         {% endif %}
                         <div class="input-section">

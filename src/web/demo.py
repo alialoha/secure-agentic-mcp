@@ -10,7 +10,7 @@ def demo_reply(user_message: str, error_hint: str | None = None) -> str:
         "[Demo mode — no live LLM] This is a canned response so the UI stays usable "
         "without API keys or when the model is unreachable.\n\n"
         f"You said: «{text}»\n\n"
-        "The full experience uses OpenAI tool-calling against the MCP HTTP server "
-        "(same stack as the Operator console). Set OPENAI_API_KEY and choose **Live**."
+        "The full experience uses tool-calling (OpenAI-compatible API) against the MCP HTTP server "
+        "(same stack as the Operator console). Set LLM credentials per .env.example (OpenAI, Groq, Cerebras, custom URL, etc.) and choose **Live**."
         f"{extra}"
     )

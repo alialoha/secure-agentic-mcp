@@ -37,9 +37,9 @@ All Python packages live under **`src/`** only. (Do not add `mcp_client`, `mcp_s
 
 - `src/mcp_server` — merged workspace + governance tools, audit log, resources, prompts; serves **`/mcp`** over streamable HTTP.
 - `src/mcp_client` — streamable HTTP client + `data/permissions.json` policy + client audit log.
-- `src/agent` — OpenAI tool-calling host (shared by Operator and Flask Live).
+- `src/agent` — LLM tool-calling host (OpenAI-compatible: OpenAI, Groq, Cerebras, custom `OPENAI_BASE_URL`; shared by Operator and Flask Live).
 - `src/mcp_operator` — Gradio: AI chat, tool/resource/prompt inspection, permission editor.
-- `src/web` — Flask user app: **Demo** (offline) or **Live** (OpenAI + MCP).
+- `src/web` — Flask user app: **Demo** (offline) or **Live** (LLM + MCP).
 - `data/` — `permissions.json`, `workspace/`, generated `audit.log`.
 
 ### Repository tree
@@ -65,6 +65,7 @@ secure-agentic-mcp/
 └── src/
     ├── agent/
     │   ├── __init__.py
+    │   ├── llm_client.py
     │   └── mcp_llm_host.py
     ├── mcp_client/
     │   ├── __init__.py
@@ -104,7 +105,7 @@ cd secure-agentic-mcp
 python -m venv .venv
 .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-copy .env.example .env   # add OPENAI_API_KEY for Live / Operator chat
+copy .env.example .env   # add LLM credentials (OpenAI, Groq, Cerebras, or custom URL — see comments)
 ```
 
 Terminal 1 — MCP server:
@@ -148,11 +149,11 @@ copy .env.example .env
 docker compose up --build
 ```
 
-Maps: MCP `8000`, Operator `7860`, Web `5000`. Set `OPENAI_API_KEY` in `.env`.
+Maps: MCP `8000`, Operator `7860`, Web `5000`. Set LLM credentials in `.env` (default `LLM_PROVIDER=openai` + `OPENAI_API_KEY`, or `groq` / `cerebras` / `custom` — see `.env.example` and [free-llm-apis](https://github.com/vossenwout/free-llm-apis)).
 
 ## Environment
 
-See `.env.example`. Important: `MCP_SERVER_URL` (must match Docker service `http://mcp:8000` inside Compose), `MCP_DATA_DIR`, `OPENAI_API_KEY` for Live mode.
+See `.env.example`. Important: `MCP_SERVER_URL` (must match Docker service `http://mcp:8000` inside Compose), `MCP_DATA_DIR`, and `LLM_PROVIDER` with the matching keys (`OPENAI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, or `OPENAI_BASE_URL` + `OPENAI_API_KEY` for custom). Free-tier setup ideas: [free-llm-apis](https://github.com/vossenwout/free-llm-apis).
 
 ## Troubleshooting
 
@@ -182,6 +183,7 @@ pytest -v
 | `demo_reply` | Offline demo strings |
 | Permission client | Load/save JSON policy, `check_permission`, defaults |
 | `risk_levels_map` | All expected tool names present |
+| `llm_client` | Provider defaults, `resolved_llm_model`, `live_llm_configured` |
 | Flask | `GET /`, `POST /generate` demo mode, validation error |
 
 For manual end-to-end checks, run the three processes from [Quick start (local)](#quick-start-local) and exercise Operator + Live mode in the browser.

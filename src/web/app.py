@@ -8,6 +8,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
+from agent.llm_client import (
+    format_llm_error_hint,
+    live_llm_configured,
+    llm_provider,
+    resolved_llm_model,
+)
 from agent.mcp_llm_host import MCPLLMHost
 from web.branding import get_branding
 from web.demo import demo_reply
@@ -15,6 +21,30 @@ from web.demo import demo_reply
 _ROOT = Path(__file__).resolve().parent
 _REPO = _ROOT.parents[2]
 load_dotenv(_REPO / ".env")
+
+# One-line hint so Live mode shows which provider and model are configured.
+def _log_llm_backend() -> None:
+    p = llm_provider()
+    m = resolved_llm_model()
+    labels = {
+        "openai": "OpenAI API",
+        "groq": "Groq",
+        "cerebras": "Cerebras",
+        "custom": "Custom OPENAI_BASE_URL",
+    }
+    label = labels.get(p, p)
+    extra = ""
+    if p == "github":
+        extra = "  (unsupported — set LLM_PROVIDER to openai, groq, cerebras, or custom)"
+    elif not live_llm_configured():
+        extra = "  credentials=MISSING"
+    print(
+        f"[secure-agentic-mcp] LLM: {label}  model={m}{extra}",
+        flush=True,
+    )
+
+
+_log_llm_backend()
 
 app = Flask(
     __name__,
@@ -24,9 +54,7 @@ app = Flask(
 
 
 def _live_allowed() -> bool:
-    return bool(os.environ.get("OPENAI_API_KEY")) and os.environ.get(
-        "WEB_ENABLE_LIVE", "1"
-    ) not in ("0", "false", "False")
+    return live_llm_configured()
 
 
 def _run_chat(message: str) -> str:
@@ -71,7 +99,7 @@ def generate():
                 {
                     "response": demo_reply(
                         user_message,
-                        error_hint="OPENAI_API_KEY not set or WEB_ENABLE_LIVE=0",
+                        error_hint="No LLM credentials for the selected LLM_PROVIDER (see .env.example) or WEB_ENABLE_LIVE=0",
                     ),
                     "duration": time.time() - start,
                     "mode": "demo",
@@ -87,12 +115,13 @@ def generate():
                 }
             )
         except Exception as e:
+            hint = format_llm_error_hint(e)
             return jsonify(
                 {
-                    "response": demo_reply(user_message, error_hint=str(e)),
+                    "response": demo_reply(user_message, error_hint=hint),
                     "duration": time.time() - start,
                     "mode": "demo",
-                    "error": str(e),
+                    "error": hint,
                 }
             )
 
@@ -104,6 +133,7 @@ if __name__ == "__main__":
     print("=" * 64)
     print("secure-agentic-mcp | User UI (Flask)")
     print(f"  MCP_SERVER_URL (for Live mode): {mcp_url}")
+    print(f"  LLM_PROVIDER: {llm_provider()}  model: {resolved_llm_model()}")
     print("=" * 64)
     app.run(
         host=os.environ.get("FLASK_HOST", "0.0.0.0"),

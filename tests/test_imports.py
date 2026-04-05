@@ -20,6 +20,13 @@ def test_import_agent():
     assert MCPLLMHost is not None
 
 
+def test_import_llm_client():
+    from agent import llm_client
+
+    assert llm_client.build_llm_client is not None
+    assert llm_client.resolved_llm_model() is not None
+
+
 def test_import_operator_module():
     import mcp_operator.gradio_app
 

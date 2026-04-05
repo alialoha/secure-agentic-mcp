@@ -7,10 +7,17 @@ Prereq (once per machine):
   .\.venv\Scripts\Activate.ps1
   pip install -r requirements.txt
   copy .env.example .env
-  (edit .env — set OPENAI_API_KEY for Operator chat / Flask Live)
+  (edit .env — set LLM credentials for Operator chat / Flask Live; see .env.example)
 
 Preview env only (no servers):
   .\scripts\00-print-env.ps1
+
+All three in separate windows at once (Windows):
+  .\scripts\start-all-terminals.ps1
+
+LLM smoke test (uses current LLM_PROVIDER from .env; needs network + valid keys):
+  set PYTHONPATH=src
+  python scripts/llm_smoke_test.py
 
 Terminal A — MCP server (leave running):
   .\scripts\01-mcp-server.ps1

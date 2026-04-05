@@ -8,6 +8,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from agent.llm_client import build_llm_client, resolved_llm_model
 from mcp_client.http_permission_client import MCPPermissionHTTPClient
 
 
@@ -34,7 +35,7 @@ class MCPLLMHost(MCPPermissionHTTPClient):
         )
         super().__init__(url, perm)
         self._llm_client: OpenAI | None = None
-        self.model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        self.model = resolved_llm_model()
         self.conversation_history: list[dict[str, Any]] = []
         self.pending_approval: dict[str, Any] | None = None
         self.risk_levels = risk_levels_map()
@@ -42,7 +43,7 @@ class MCPLLMHost(MCPPermissionHTTPClient):
     @property
     def llm_client(self) -> OpenAI:
         if self._llm_client is None:
-            self._llm_client = OpenAI()
+            self._llm_client = build_llm_client()
         return self._llm_client
 
     def reset_conversation(self) -> None:

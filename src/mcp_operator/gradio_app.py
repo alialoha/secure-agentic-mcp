@@ -18,6 +18,7 @@ import os
 import gradio as gr
 from dotenv import load_dotenv
 
+from agent.llm_client import llm_provider, resolved_llm_model
 from agent.mcp_llm_host import MCPLLMHost
 from web.branding import get_branding, read_architecture_svg
 from mcp_operator.suggested_args import (
@@ -393,6 +394,7 @@ def main():
         "  If tools list files that are missing on disk under this repo's "
         "data/workspace/, another MCP server may be using that port."
     )
+    print(f"  LLM_PROVIDER: {llm_provider()}  model: {resolved_llm_model()}")
     print(sep)
     app = OperatorApp()
     # Passing None lets Gradio scan a range starting at 7860. A literal 7860 binds only that port
