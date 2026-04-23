@@ -29,7 +29,7 @@
         </div>
 
         <div class="chat-container">
-            <div class="messages-area">
+            <div id="messagesArea" class="messages-area" role="log" aria-live="polite" aria-relevant="additions">
                 <div class="messages-content">
                     <div id="welcomeScreen" class="welcome-screen">
                         <div class="welcome-intro">
@@ -56,6 +56,7 @@
                             <p class="welcome-text">
                                 <strong>Demo</strong> — offline canned replies (always works).
                                 <strong>Live</strong> — LLM + MCP tools: set credentials for your <code>LLM_PROVIDER</code> (e.g. <code>OPENAI_API_KEY</code>, or <code>groq</code>/<code>cerebras</code> keys — see <code>.env.example</code>); MCP server must be reachable.
+                                Live keeps this tab’s chat in context until you press <strong>Clear</strong>.
                                 Use the <em>Operator</em> (Gradio) to list tools and edit policies.
                             </p>
                         </div>
@@ -73,7 +74,6 @@
                             </div>
                         </div>
                     </div>
-                    <div id="messagesEnd"></div>
                 </div>
             </div>
 

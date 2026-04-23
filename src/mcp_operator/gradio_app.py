@@ -3,6 +3,7 @@ Operator console: Gradio UI around MCPLLMHost (tools/resources/prompts/permissio
 """
 from __future__ import annotations
 
+import errno
 import json
 import sys
 from pathlib import Path
@@ -232,7 +233,6 @@ class OperatorApp(MCPLLMHost):
         )
         with gr.Blocks(
             title="Secure MCP — Admin operator",
-            theme=gr.themes.Default(),
         ) as demo:
             gr.Markdown(
                 f"""
@@ -261,11 +261,15 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                         chat_wrapper,
                         [msg, chatbot],
                         chatbot,
+                        queue=False,
                     ).then(lambda: "", outputs=msg)
-                    msg.submit(chat_wrapper, [msg, chatbot], chatbot).then(
-                        lambda: "", outputs=msg
-                    )
-                    clr.click(reset_chat, outputs=chatbot)
+                    msg.submit(
+                        chat_wrapper,
+                        [msg, chatbot],
+                        chatbot,
+                        queue=False,
+                    ).then(lambda: "", outputs=msg)
+                    clr.click(reset_chat, outputs=chatbot, queue=False)
 
                 with gr.Tab("Tools"):
                     gr.Markdown(
@@ -288,7 +292,7 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                                 run = gr.Button("Call")
                                 ok = gr.Button("Approve & call")
                             out = gr.Textbox(label="Result", lines=10)
-                    b1.click(self.gui_list_tools, outputs=[t1, dd, args])
+                    b1.click(self.gui_list_tools, outputs=[t1, dd, args], queue=False)
 
                     def _args_sample_for_dropdown(selection: str) -> str:
                         return sample_json_for_tool(tool_name_from_dropdown(selection))
@@ -301,8 +305,8 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                     async def _call_ok(d, a):
                         return await self.gui_call_tool(d, a, True)
 
-                    run.click(_call_norm, [dd, args], out)
-                    ok.click(_call_ok, [dd, args], out)
+                    run.click(_call_norm, [dd, args], out, queue=False)
+                    ok.click(_call_ok, [dd, args], out, queue=False)
 
                 with gr.Tab("Resources"):
                     with gr.Row():
@@ -316,8 +320,8 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                             )
                             rr = gr.Button("Read resource")
                             rc = gr.Textbox(label="Content", lines=12)
-                    lr.click(self.gui_list_resources, outputs=rt)
-                    rr.click(self.gui_read_resource, uri, rc)
+                    lr.click(self.gui_list_resources, outputs=rt, queue=False)
+                    rr.click(self.gui_read_resource, uri, rc, queue=False)
 
                 with gr.Tab("Prompts"):
                     gr.Markdown(
@@ -338,13 +342,13 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                             )
                             gp = gr.Button("Get prompt")
                             pr = gr.Textbox(label="Rendered", lines=12)
-                    lp.click(self.gui_list_prompts, outputs=[po, pd, pa])
+                    lp.click(self.gui_list_prompts, outputs=[po, pd, pa], queue=False)
 
                     def _args_sample_prompt(selection: str) -> str:
                         return sample_json_for_prompt((selection or "").strip())
 
                     pd.change(_args_sample_prompt, inputs=pd, outputs=pa)
-                    gp.click(self.gui_get_prompt, [pd, pa], pr)
+                    gp.click(self.gui_get_prompt, [pd, pa], pr, queue=False)
 
                 with gr.Tab("Permissions"):
                     with gr.Row():
@@ -363,9 +367,9 @@ to review what was allowed, blocked, or sent for approval. **Tools / Resources /
                             gr.Markdown("**Client audit log** (operator decisions)")
                             va = gr.Button("Refresh audit log")
                             aud = gr.Textbox(label="Audit", lines=18)
-                    lt.click(self.load_perm_tool_choices, outputs=[pdd, pres])
-                    sv.click(self.gui_configure_permission, [pdd, pol], pres)
-                    va.click(self.gui_view_audit_log, outputs=aud)
+                    lt.click(self.load_perm_tool_choices, outputs=[pdd, pres], queue=False)
+                    sv.click(self.gui_configure_permission, [pdd, pol], pres, queue=False)
+                    va.click(self.gui_view_audit_log, outputs=aud, queue=False)
 
             gr.Markdown(
                 f"---\n\nDesigned & built by **{b['author_name']}** · "
@@ -402,7 +406,22 @@ def main():
     port = int(_env_port) if _env_port else None
     host = os.environ.get("GRADIO_SERVER_NAME", "0.0.0.0")
     demo = app.create_interface()
-    demo.queue().launch(server_name=host, server_port=port)
+    try:
+        demo.queue().launch(
+            server_name=host,
+            server_port=port,
+            theme=gr.themes.Default(),
+        )
+    except OSError as exc:
+        port_hint = port if port is not None else "7860+ (auto)"
+        if exc.errno == errno.EADDRINUSE or getattr(exc, "winerror", None) == 10048:
+            print(
+                f"\nERROR: Port already in use ({port_hint}). "
+                "Stop the other process (another Operator, old Gradio, etc.) or set "
+                "GRADIO_SERVER_PORT to a free port, or clear GRADIO_SERVER_PORT to let Gradio pick one.\n",
+                file=sys.stderr,
+            )
+        raise
 
 
 if __name__ == "__main__":

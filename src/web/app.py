@@ -17,6 +17,7 @@ from agent.llm_client import (
 from agent.mcp_llm_host import MCPLLMHost
 from web.branding import get_branding
 from web.demo import demo_reply
+from web.error_status import ErrorStatus, classify_live_failure
 
 _ROOT = Path(__file__).resolve().parent
 _REPO = _ROOT.parents[2]
@@ -57,8 +58,11 @@ def _live_allowed() -> bool:
     return live_llm_configured()
 
 
-def _run_chat(message: str) -> str:
+def _run_chat(message: str, prior_messages: list | None = None) -> str:
+    """Each HTTP request uses a new host; prior_messages restores in-tab chat memory."""
     host = MCPLLMHost()
+    if prior_messages:
+        host.conversation_history = MCPLLMHost.sanitize_external_history(prior_messages)
     return asyncio.run(host.chat(message))
 
 
@@ -95,18 +99,32 @@ def generate():
 
     if mode == "live":
         if not _live_allowed():
+            status = ErrorStatus(
+                mode="demo",
+                llm_connection="disconnected",
+                data_access="unavailable",
+                failure_point="llm_gateway",
+                error_code="LIVE_DISABLED_OR_UNCONFIGURED",
+                detail="No LLM credentials for selected provider, or WEB_ENABLE_LIVE=0",
+                retryable=False,
+            )
             return jsonify(
                 {
                     "response": demo_reply(
                         user_message,
                         error_hint="No LLM credentials for the selected LLM_PROVIDER (see .env.example) or WEB_ENABLE_LIVE=0",
+                        status=status,
                     ),
                     "duration": time.time() - start,
                     "mode": "demo",
+                    "status": status.__dict__,
                 }
             )
         try:
-            text = _run_chat(user_message)
+            prior = data.get("history")
+            if not isinstance(prior, list):
+                prior = None
+            text = _run_chat(user_message, prior_messages=prior)
             return jsonify(
                 {
                     "response": text,
@@ -116,12 +134,14 @@ def generate():
             )
         except Exception as e:
             hint = format_llm_error_hint(e)
+            status = classify_live_failure(hint)
             return jsonify(
                 {
-                    "response": demo_reply(user_message, error_hint=hint),
+                    "response": demo_reply(user_message, error_hint=hint, status=status),
                     "duration": time.time() - start,
-                    "mode": "demo",
+                    "mode": status.mode,
                     "error": hint,
+                    "status": status.__dict__,
                 }
             )
 

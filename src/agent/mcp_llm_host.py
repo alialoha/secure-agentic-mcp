@@ -11,6 +11,19 @@ from openai import OpenAI
 from agent.llm_client import build_llm_client, resolved_llm_model
 from mcp_client.http_permission_client import MCPPermissionHTTPClient
 
+# Steers models away from bogus parallel “<function=…>” generations that trigger tool_use_failed (400).
+_LIVE_SYSTEM_PROMPT = (
+    "You are a governed assistant connected to an MCP server over HTTP. "
+    "You see prior user/assistant messages in this thread when provided—use them for continuity. "
+    "Answer questions about yourself, memory, or how this chat works in plain natural language "
+    "without calling tools, unless the user explicitly asks to inspect MCP tools, resources, prompts, "
+    "or server-side data. "
+    "When you do need tools, use only the API-native function calls the host provides—"
+    "exact function names and JSON arguments (use {} if there are no parameters). "
+    "Prefer at most one tool call per assistant turn unless the user clearly needs more; "
+    "never invent XML, angle-bracket tags, or alternate syntax for tools."
+)
+
 
 def risk_levels_map() -> dict[str, str]:
     return {
@@ -25,6 +38,27 @@ def risk_levels_map() -> dict[str, str]:
 
 class MCPLLMHost(MCPPermissionHTTPClient):
     """Tool-calling assistant over streamable HTTP MCP with client-side permissions."""
+
+    @staticmethod
+    def sanitize_external_history(raw: Any, *, max_messages: int = 60) -> list[dict[str, Any]]:
+        """Keep only user/assistant text turns from the browser (Flask); drop tool/system injection."""
+        if not isinstance(raw, list):
+            return []
+        out: list[dict[str, Any]] = []
+        for item in raw[-max_messages:]:
+            if not isinstance(item, dict):
+                continue
+            role = item.get("role")
+            if role not in ("user", "assistant"):
+                continue
+            content = item.get("content")
+            if content is None:
+                continue
+            text = content if isinstance(content, str) else str(content)
+            if len(text) > 48_000:
+                text = text[:48_000] + "\n…(truncated)"
+            out.append({"role": role, "content": text})
+        return out
 
     def __init__(self, server_url: str | None = None, permissions_file: str | None = None):
         base = Path(__file__).resolve().parents[2]
@@ -232,6 +266,11 @@ class MCPLLMHost(MCPPermissionHTTPClient):
             self.conversation_history.append({"role": "assistant", "content": msg})
             return msg
 
+        if not self.conversation_history or self.conversation_history[0].get("role") != "system":
+            self.conversation_history.insert(
+                0,
+                {"role": "system", "content": _LIVE_SYSTEM_PROMPT},
+            )
         self.conversation_history.append({"role": "user", "content": user_message})
         tools = await self.get_available_tools()
 
@@ -241,6 +280,7 @@ class MCPLLMHost(MCPPermissionHTTPClient):
                 messages=self.conversation_history,
                 tools=tools,
                 tool_choice="auto",
+                parallel_tool_calls=False,
             )
         else:
             response = self.llm_client.chat.completions.create(

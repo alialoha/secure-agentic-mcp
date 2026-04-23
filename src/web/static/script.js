@@ -2,9 +2,9 @@ let messages = [];
 let isLoading = false;
 
 const welcomeScreen = document.getElementById('welcomeScreen');
+const messagesArea = document.getElementById('messagesArea');
 const messagesContainer = document.getElementById('messagesContainer');
 const loadingIndicator = document.getElementById('loadingIndicator');
-const messagesEnd = document.getElementById('messagesEnd');
 const clearBtn = document.getElementById('clearBtn');
 const chatForm = document.getElementById('chatForm');
 const messageInput = document.getElementById('messageInput');
@@ -12,6 +12,55 @@ const modelSelect = document.getElementById('modelSelect');
 const sendButton = document.getElementById('sendButton');
 const sendIcon = document.getElementById('sendIcon');
 const loadingSpinner = document.getElementById('loadingSpinner');
+
+function escapeHtml(input) {
+    return String(input)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function formatStatusRow(status) {
+    if (!status || typeof status !== 'object') return '';
+
+    const mode = status.mode ? String(status.mode) : 'unknown';
+    const llm = status.llm_connection ? String(status.llm_connection) : 'unknown';
+    const dataTool = status.data_access ? String(status.data_access) : 'unknown';
+    const error = status.error_code ? String(status.error_code) : 'UNKNOWN';
+    const chipText = `Mode: ${mode} · LLM: ${llm} · Data Tool: ${dataTool} · Error: ${error}`;
+
+    const failurePoint = status.failure_point
+        ? `<span>Failure point: ${escapeHtml(status.failure_point)}</span>`
+        : '';
+    const retryable = status.retryable !== undefined
+        ? `<span>Retryable: ${status.retryable ? 'yes' : 'no'}</span>`
+        : '';
+    const detail = status.detail ? `<span>Detail: ${escapeHtml(status.detail)}</span>` : '';
+    const tone = getStatusTone(status);
+
+    return `
+        <div class="message-status-chip ${tone}">${escapeHtml(chipText)}</div>
+        <div class="message-status-meta ${tone}">
+            ${failurePoint}
+            ${retryable}
+            ${detail}
+        </div>
+    `;
+}
+
+function getStatusTone(status) {
+    const llm = status.llm_connection ? String(status.llm_connection).toLowerCase() : 'unknown';
+    const dataTool = status.data_access ? String(status.data_access).toLowerCase() : 'unknown';
+    const errorCode = status.error_code ? String(status.error_code).toUpperCase() : 'UNKNOWN';
+
+    if (llm === 'disconnected' || errorCode === 'LLM_UNREACHABLE') return 'status-disconnected';
+    if (llm === 'connected' && dataTool === 'available' && errorCode === 'OK') return 'status-connected';
+    if (dataTool === 'unavailable' || errorCode === 'UNKNOWN_PROMPT' || errorCode === 'AUTH_FAILED') {
+        return 'status-warning';
+    }
+    if (llm === 'connected') return 'status-connected';
+    return 'status-unknown';
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     modelSelect.value = 'demo';
@@ -64,6 +113,11 @@ async function sendMessage(content, model) {
         type: 'user',
         timestamp: new Date()
     };
+    const priorHistory = messages.map((m) => ({
+        role: m.type === 'user' ? 'user' : 'assistant',
+        content: m.content,
+    }));
+
     messages.push(userMessage);
     displayMessage(userMessage);
 
@@ -74,10 +128,14 @@ async function sendMessage(content, model) {
     setLoadingState(true);
 
     try {
+        const payload = { message: content, model: model };
+        if (model === 'live' && priorHistory.length > 0) {
+            payload.history = priorHistory;
+        }
         const response = await fetch('/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: content, model: model })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -89,6 +147,7 @@ async function sendMessage(content, model) {
                 content: `Error: ${data.error}`,
                 type: 'ai',
                 model: data.mode || model,
+                status: data.status || null,
                 timestamp: new Date()
             };
         } else {
@@ -98,6 +157,7 @@ async function sendMessage(content, model) {
                 type: 'ai',
                 model: data.mode || model,
                 duration: data.duration,
+                status: data.status || null,
                 timestamp: new Date()
             };
         }
@@ -141,11 +201,9 @@ function displayMessage(message) {
             ? `<span>${message.duration.toFixed(2)}s</span>`
             : '';
 
-    const safeText = String(message.content)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+    const safeText = escapeHtml(String(message.content))
         .replace(/\n/g, '<br/>');
+    const statusRow = message.type === 'ai' ? formatStatusRow(message.status) : '';
 
     messageEl.innerHTML = `
         <div class="message-wrapper">
@@ -158,6 +216,7 @@ function displayMessage(message) {
             </div>
             <div class="message-bubble">
                 <div class="message-text">${safeText}</div>
+                ${statusRow}
             </div>
             <div class="message-footer">
                 <span>${time}</span>
@@ -208,5 +267,9 @@ function clearChat() {
 }
 
 function scrollToBottom() {
-    messagesEnd.scrollIntoView({ behavior: 'smooth' });
+    if (!messagesArea) return;
+    messagesArea.scrollTo({
+        top: messagesArea.scrollHeight,
+        behavior: 'smooth'
+    });
 }

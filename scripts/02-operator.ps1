@@ -22,6 +22,7 @@ if (-not $env:GRADIO_SERVER_PORT) { $env:GRADIO_SERVER_PORT = "7860" }
 Show-Banner "Step 2 — Operator (Gradio)"
 Write-Host "  Command: $python -m mcp_operator.gradio_app"
 Write-Host "  Open:    http://127.0.0.1:$($env:GRADIO_SERVER_PORT)/"
+Write-Host "  If launch fails with port in use: stop other Gradio apps or set GRADIO_SERVER_PORT to a free port (or remove it for auto-pick)."
 Write-Host "  Stop:    Ctrl+C"
 Write-Host ""
 Show-EnvSummary @("PYTHONPATH", "MCP_DATA_DIR", "MCP_SERVER_URL", "PERMISSIONS_PATH", "GRADIO_SERVER_NAME", "GRADIO_SERVER_PORT")
