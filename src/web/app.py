@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, url_for
 
 from agent.llm_client import (
     format_llm_error_hint,
@@ -69,11 +69,19 @@ def _run_chat(message: str, prior_messages: list | None = None) -> str:
 @app.route("/")
 def index():
     b = get_branding()
+    og_description = (
+        "Governed Model Context Protocol over streamable HTTP: permissions, audit trail, "
+        "then the LLM — a reference UI for permissioned agentic tools."
+    )
     return render_template(
         "index.html",
         live_available=_live_allowed(),
         author_name=b["author_name"],
         repo_url=b["repo_url"],
+        og_title="Secure MCP — Permissioned tools, then the model",
+        og_description=og_description,
+        og_url=url_for("index", _external=True),
+        og_image=url_for("static", filename="architecture.svg", _external=True),
     )
 
 

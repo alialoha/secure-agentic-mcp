@@ -3,21 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111827">
+    <meta name="description" content="{{ og_description }}">
     <title>Secure MCP — {{ author_name }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:url" content="{{ og_url }}">
+    <meta property="og:image" content="{{ og_image }}">
+    <meta property="og:site_name" content="Secure MCP">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ og_title }}">
+    <meta name="twitter:description" content="{{ og_description }}">
+    <meta name="twitter:image" content="{{ og_image }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body class="font-ibm-plex">
     <div class="app-container">
         <div class="header">
             <div class="header-content">
                 <div class="header-brand">
-                    <h1 class="header-title">Secure MCP</h1>
-                    <p class="header-tagline">Governed tools over HTTP — not a generic chatbot shell</p>
+                    <div class="header-lockup">
+                        <div class="header-mark" aria-hidden="true">
+                            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="32" height="32" rx="8" fill="#111827"/>
+                                <path d="M16 6l9 4v7c0 5-3.8 9.2-9 10-5.2-.8-9-5-9-10v-7l9-4z" stroke="#93c5fd" stroke-width="1.5" stroke-linejoin="round" fill="#1f2937"/>
+                                <circle cx="16" cy="15" r="3" fill="#60a5fa"/>
+                                <path d="M16 18v4M13 22h6" stroke="#93c5fd" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="header-titles">
+                            <h1 class="header-title">Secure MCP</h1>
+                            <p class="header-tagline">Permissioned tools the model can actually use — governed MCP over HTTP, not a generic chat shell.</p>
+                        </div>
+                    </div>
                 </div>
-                <button id="clearBtn" class="clear-btn" style="display: none;">
+                <button id="clearBtn" class="clear-btn" type="button" style="display: none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="m3 6 18 0"></path>
                         <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -41,15 +66,26 @@
                                 enforces <strong>allow / ask / deny</strong> from <code>permissions.json</code>, and writes an
                                 <strong>audit</strong> trail. Only then does the <strong>LLM</strong> plan the next step.
                             </p>
+                            <ul class="welcome-badges" aria-label="Highlights">
+                                <li>MCP</li>
+                                <li>Streamable HTTP</li>
+                                <li>Allow / ask / deny</li>
+                                <li>Audit trail</li>
+                            </ul>
                         </div>
-                        <figure class="welcome-diagram">
-                            <img
-                                src="{{ url_for('static', filename='architecture.svg') }}"
-                                width="1100"
-                                height="400"
-                                alt="Architecture: MCP server, permission client, LLM host (bidirectional HTTP)"
-                                loading="lazy"
-                            />
+                        <figure class="welcome-diagram welcome-diagram-card">
+                            <div class="welcome-diagram-inner">
+                                <img
+                                    src="{{ url_for('static', filename='architecture.svg') }}"
+                                    width="1100"
+                                    height="400"
+                                    alt="Architecture: MCP server, permission client, LLM host (bidirectional HTTP)"
+                                    loading="lazy"
+                                />
+                            </div>
+                            <figcaption class="welcome-diagram-caption">
+                                Reference flow: MCP exposes capabilities → permissioned client + audit → OpenAI-compatible tool calling.
+                            </figcaption>
                         </figure>
                         <div class="welcome-modes">
                             <h3 class="welcome-subtitle">Try it</h3>
@@ -59,6 +95,18 @@
                                 Live keeps this tab’s chat in context until you press <strong>Clear</strong>.
                                 Use the <em>Operator</em> (Gradio) to list tools and edit policies.
                             </p>
+                            <p class="welcome-starters-label">Try asking</p>
+                            <div class="welcome-starters" role="group" aria-label="Suggested prompts">
+                                <button type="button" class="starter-chip" data-prompt="List the MCP tools I am allowed to use.">
+                                    List allowed MCP tools
+                                </button>
+                                <button type="button" class="starter-chip" data-prompt="Summarize how allow / ask / deny permissions work in this stack.">
+                                    Explain allow / ask / deny
+                                </button>
+                                <button type="button" class="starter-chip" data-prompt="What is the difference between Demo mode and Live mode in this UI?">
+                                    Demo vs Live in this UI
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="messagesContainer" class="messages-container"></div>
@@ -81,16 +129,39 @@
                 <div class="input-content">
                     <form id="chatForm" class="chat-form">
                         <div class="model-section">
-                            <span class="model-label">Mode:</span>
-                            <div class="select-wrapper">
-                                <select id="modelSelect" class="model-select">
-                                    <option value="demo">Demo (always works)</option>
-                                    <option value="live" {% if not live_available %}disabled{% endif %}>Live (LLM + MCP)</option>
-                                </select>
+                            <span class="model-label" id="modeLabel">Mode</span>
+                            <div
+                                class="mode-segmented"
+                                role="radiogroup"
+                                aria-labelledby="modeLabel"
+                            >
+                                <button
+                                    type="button"
+                                    class="mode-segment mode-segment-active"
+                                    id="modeDemo"
+                                    role="radio"
+                                    aria-checked="true"
+                                    data-mode="demo"
+                                >
+                                    Demo
+                                    <span class="mode-segment-hint">always works</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="mode-segment"
+                                    id="modeLive"
+                                    role="radio"
+                                    aria-checked="false"
+                                    data-mode="live"
+                                    {% if not live_available %}disabled aria-disabled="true"{% endif %}
+                                >
+                                    Live
+                                    <span class="mode-segment-hint">LLM + MCP</span>
+                                </button>
                             </div>
                         </div>
                         {% if not live_available %}
-                        <p class="welcome-text" style="padding: 0 24px 8px; font-size: 13px; color: #6b7280;">
+                        <p class="live-disabled-hint">
                             Live mode disabled: configure LLM credentials for the selected <code>LLM_PROVIDER</code> in <code>.env</code> (see <code>.env.example</code>).
                         </p>
                         {% endif %}
@@ -123,11 +194,12 @@
                 Designed &amp; built by <strong>{{ author_name }}</strong>
                 · <a href="{{ repo_url }}" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
             </p>
+            <p class="footer-stack" aria-hidden="true">Flask · MCP · Streamable HTTP · OpenAI-compatible tool calling</p>
         </footer>
     </div>
     <script>
         window.__LIVE_AVAILABLE__ = {{ 'true' if live_available else 'false' }};
     </script>
-    <script src="/static/script.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

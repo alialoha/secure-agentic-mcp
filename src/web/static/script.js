@@ -8,7 +8,8 @@ const loadingIndicator = document.getElementById('loadingIndicator');
 const clearBtn = document.getElementById('clearBtn');
 const chatForm = document.getElementById('chatForm');
 const messageInput = document.getElementById('messageInput');
-const modelSelect = document.getElementById('modelSelect');
+const modeDemoBtn = document.getElementById('modeDemo');
+const modeLiveBtn = document.getElementById('modeLive');
 const sendButton = document.getElementById('sendButton');
 const sendIcon = document.getElementById('sendIcon');
 const loadingSpinner = document.getElementById('loadingSpinner');
@@ -62,23 +63,65 @@ function getStatusTone(status) {
     return 'status-unknown';
 }
 
+let selectedModel = 'demo';
+
 document.addEventListener('DOMContentLoaded', function () {
-    modelSelect.value = 'demo';
+    setSelectedModel('demo');
     setupEventListeners();
     updateSendButton();
 });
+
+function getSelectedModel() {
+    return selectedModel;
+}
+
+function setSelectedModel(mode) {
+    if (mode === 'live' && window.__LIVE_AVAILABLE__ === false) {
+        mode = 'demo';
+    }
+    selectedModel = mode;
+    const isDemo = mode === 'demo';
+    if (modeDemoBtn) {
+        modeDemoBtn.classList.toggle('mode-segment-active', isDemo);
+        modeDemoBtn.setAttribute('aria-checked', isDemo ? 'true' : 'false');
+    }
+    if (modeLiveBtn) {
+        modeLiveBtn.classList.toggle('mode-segment-active', !isDemo);
+        modeLiveBtn.setAttribute('aria-checked', !isDemo ? 'true' : 'false');
+    }
+}
 
 function setupEventListeners() {
     chatForm.addEventListener('submit', handleSubmit);
     clearBtn.addEventListener('click', clearChat);
     messageInput.addEventListener('input', handleInputChange);
     messageInput.addEventListener('keydown', handleKeyDown);
+    if (modeDemoBtn) {
+        modeDemoBtn.addEventListener('click', function () {
+            setSelectedModel('demo');
+        });
+    }
+    if (modeLiveBtn) {
+        modeLiveBtn.addEventListener('click', function () {
+            if (modeLiveBtn.disabled) return;
+            setSelectedModel('live');
+        });
+    }
+    document.querySelectorAll('.starter-chip').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const text = btn.getAttribute('data-prompt') || '';
+            messageInput.value = text;
+            messageInput.focus();
+            autoResizeTextarea();
+            updateSendButton();
+        });
+    });
 }
 
 function handleSubmit(e) {
     e.preventDefault();
     const content = messageInput.value.trim();
-    const model = modelSelect.value;
+    const model = getSelectedModel();
     if (!content || isLoading) return;
     sendMessage(content, model);
 }
